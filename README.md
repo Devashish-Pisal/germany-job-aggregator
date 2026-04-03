@@ -1,8 +1,9 @@
-# germany-job-aggregator
+# Multi-Source Job Aggregator – Python API & Data Pipeline Project
+
 ---
 
-Python-based job aggregator that collects listings from Arbeitsamt, Adzuna, and Arbeitnow APIs with deduplication processing.
-
+This project is a modular Python-based job aggregator that integrates multiple public APIs to collect, normalize, and deduplicate job listings into a unified dataset.
+It demonstrates practical skills in API integration, data processing, and building simple data pipelines with clean architecture.
 ---
 ## TODO
 
