@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 
-PROJECT_ROOT = Path.cwd()
+PROJECT_ROOT = Path(__file__).parent
 CONFIG_FOLDER_PATH = PROJECT_ROOT / "config"
 
 DATA_FOLDER_PATH = PROJECT_ROOT / "data"
