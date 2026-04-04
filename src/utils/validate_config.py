@@ -1,33 +1,59 @@
+from typing import List, Literal
 from box import Box
-from config.common_config import config
 from loguru import logger
+from pydantic import BaseModel, Field, field_validator
 
 
-def get_country_code_mappings():
-    country_code_mapping = {
-        "united kingdom": "gb",
-        "united states": "us",
-        "austria": "at",
-        "australia": "au",
-        "belgium": "be",
-        "brazil": "br",
-        "canada": "ca",
-        "switzerland": "ch",
-        "germany": "de",
-        "spain": "es",
-        "france": "fr",
-        "india": "in",
-        "italy": "it",
-        "mexico": "mx",
-        "netherlands": "nl",
-        "new zealand": "nz",
-        "poland": "pl",
-        "singapore": "sg",
-        "south africa": "za",
-    }
-    return country_code_mapping
+class Deduplication(BaseModel):
+    use_url: bool
+    use_title_company_location: bool
 
 
+class ValidateConfig(BaseModel):
+    country:List[str]
+    city:List[str]
+    distance: int = Field(gt=0)
+    remote: bool
+    full_time: bool
+    part_time: bool
+    search_keywords: List[str]
+    page_number: int = Field(gt=0)
+    results_per_page: int = Field(gt=0)
+    max_pages: int = Field(gt=0)
+    output_filename: str = Field(pattern=r"\.csv$")
+    use_adzuna_api: bool
+    use_arbeitsamt_api: bool
+    use_arbeitsnow_api: bool
+    deduplication: Deduplication
+    output_format: Literal[".csv"]
+
+
+    @field_validator("country", "city", "search_keywords", mode="before")
+    @classmethod
+    def lower_list_items(cls, v):
+        if isinstance(v, str):
+            return [v.strip().lower()]
+        if isinstance(v, list):
+            return [v_item.strip().lower() if isinstance(v_item, str) else v_item for v_item in v]
+        return v
+
+
+    def validate_adzuna_api_prerequisite(self):
+        pass
+
+    def validate_arbeitsamt_api_prerequisite(self):
+        pass
+
+    def validate_arbeitsnow_api_prerequisite(self):
+        pass
+
+
+class ConfigUtil:
+    def __init__(self, common_config:dict):
+        self.common_config = common_config
+
+    def validate_common_config(self):
+        pass
 
 def check_prerequisite(client:str, config:Box):
     client = client.strip().lower()
