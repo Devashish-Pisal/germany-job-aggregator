@@ -4,13 +4,14 @@ config =  {
     # User query setting
     "country": ["germany"],                     # List of countries to search for job listings (case-insensitive)
     "city": ["mannheim"],                       # List of cities to search for job listings (case-insensitive)
-    "distance": 10,                             # In kilometers
+    "distance": 50,                             # In kilometers
     "remote": False,                            # If set "True", then "city", "distance" fields will be ignored completely.
     "full_time": False,
     "part_time": False,
     "search_keywords": [                        # Synonymes of search terms (at the end results for all terms will be merged and duplicated will be removed) (case-insensitive)
         "Python Engineer",
-        "Python Entwickler"
+        "Python Entwickler",
+        "Python Developer"
     ],
     "output_filename": "jobs.csv",             # Currently only .csv output file formate is supported
 
