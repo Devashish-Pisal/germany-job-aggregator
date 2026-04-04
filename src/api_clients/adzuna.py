@@ -130,26 +130,27 @@ class Adzuna():
                                     "deduplication_key": dedup_key
                                 })
                             result_1 = pd.DataFrame(rows)
-                            # Deduplicate
-                            df_to_add = result_1[~result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
-                            df_to_add = df_to_add[~df_to_add["deduplication_key"].isin(adzuna_result["deduplication_key"])]
-                            # Capture duplicates before adding to main result
-                            duplicated_entry_1 = result_1[result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
-                            duplicated_entry_2 = result_1[result_1["deduplication_key"].isin(adzuna_result["deduplication_key"])]
-                            current_duplicates = pd.concat([duplicated_entry_1, duplicated_entry_2],ignore_index=True)
-                            # If self.duplicated_entries already exists (non-empty), filter out overlapping duplicates
-                            if not duplicated_entries.empty:
-                                current_duplicates = current_duplicates[~current_duplicates["redirect_url"].isin(duplicated_entries["redirect_url"])]
-                                current_duplicates = current_duplicates[~current_duplicates["deduplication_key"].isin(duplicated_entries["deduplication_key"])]
-                            # Add the filtered duplicates to the class-level accumulator
-                            duplicated_entries = pd.concat([duplicated_entries, current_duplicates],ignore_index=True)
-                            # Add unique entries
-                            adzuna_result = pd.concat([adzuna_result, df_to_add], ignore_index=True)
+                            if not result_1.empty:
+                                # Deduplicate
+                                df_to_add = result_1[~result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
+                                df_to_add = df_to_add[~df_to_add["deduplication_key"].isin(adzuna_result["deduplication_key"])]
+                                # Capture duplicates before adding to main result
+                                duplicated_entry_1 = result_1[result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
+                                duplicated_entry_2 = result_1[result_1["deduplication_key"].isin(adzuna_result["deduplication_key"])]
+                                current_duplicates = pd.concat([duplicated_entry_1, duplicated_entry_2],ignore_index=True)
+                                # If self.duplicated_entries already exists (non-empty), filter out overlapping duplicates
+                                if not duplicated_entries.empty:
+                                    current_duplicates = current_duplicates[~current_duplicates["redirect_url"].isin(duplicated_entries["redirect_url"])]
+                                    current_duplicates = current_duplicates[~current_duplicates["deduplication_key"].isin(duplicated_entries["deduplication_key"])]
+                                # Add the filtered duplicates to the class-level accumulator
+                                duplicated_entries = pd.concat([duplicated_entries, current_duplicates],ignore_index=True)
+                                # Add unique entries
+                                adzuna_result = pd.concat([adzuna_result, df_to_add], ignore_index=True)
                     else:
                         logger.error("Remote job search for adzuna is not implemented yet!")
         self.result = adzuna_result
         self.duplicated_entries = duplicated_entries
-        logger.info(f"Total received unique results are {len(self.result)}.")
+        logger.info(f"Total found potential unique results are {len(self.result)}.")
         logger.info(f"Total found duplicated entries are {len(self.duplicated_entries)}")
 
 
