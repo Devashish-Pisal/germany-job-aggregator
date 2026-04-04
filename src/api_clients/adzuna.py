@@ -1,15 +1,140 @@
 import os
+import requests
+import pandas as pd
+from box import Box
 from loguru import logger
 from dotenv import load_dotenv
+from src.utils.custom_config import get_country_code_mappings
+from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH
 
 
-# Extract secret environment variables from .env file
-ADZUNA_APP_ID = None
-ADZUNA_API_KEY = None
-try:
-    load_dotenv()
-    ADZUNA_APP_ID = os.environ.get("ADZUNA_APP_ID")
-    ADZUNA_API_KEY = os.environ.get("ADZUNA_API_KEY")
-except Exception:
-    logger.exception("Unable to load ADZUNA secret credentials!")
+class Adzuna():
+    def __init__(self, common_config:dict):
+        self.common_config = common_config
+        self.ADZUNA_APP_ID = None
+        self.ADZUNA_APP_KEY = None
+        self.request_params = None
+        self.iter_params = None
+        self.result = None
+        self._load_adzuna_secrets()
 
+
+    def _load_adzuna_secrets(self):
+        """
+        Extract secret environment variables from .env file
+        :return: None
+        """
+        if self.common_config["use_adzuna_api"]:
+            logger.info("Using adzuna api!")
+            self.ADZUNA_APP_ID = None
+            self.ADZUNA_APP_KEY = None
+            try:
+                load_dotenv()
+                self.ADZUNA_APP_ID = os.environ.get("ADZUNA_APP_ID")
+                self.ADZUNA_APP_KEY = os.environ.get("ADZUNA_API_KEY")
+                logger.info("Adzuna secret credentials loaded successfully.")
+            except Exception:
+                logger.exception("Unable to load Adzuna secret credentials!")
+
+
+    def execute_query(self):
+        """
+        Combines all methods from the class together and executes all of them in clean pipeline manner.
+        :return: None
+        """
+        self._construct_request_and_iter_params()
+        self._make_requests()
+        self._save_csv_file()
+
+
+    def _construct_request_and_iter_params(self):
+        """
+        Creates request parameters to send with requests and creates iteration parameters to inject in request parameters one by one.
+        :return: None
+        """
+        common_config = Box(self.common_config)
+        request_params = {
+            "app_id": self.ADZUNA_APP_ID,
+            "app_key": self.ADZUNA_APP_KEY,
+            "results_per_page": common_config.results_per_page,
+            "what": None, # It is iteration variable, it will be set during making request
+        }
+        if not common_config.remote:
+            request_params["where"] = None # It is iteration variable, it will be set during making request
+            request_params["distance"] = common_config.distance
+        if common_config.full_time:
+            request_params["full_time"] = "1"
+        if common_config.part_time:
+            request_params["part_time"] = "1"
+        self.request_params = request_params
+        iter_params = {
+            "countries" : [get_country_code_mappings()[country.strip().lower()] for country in common_config.country],
+            "cities": list(common_config.city),
+            "search_terms": list(common_config.search_keywords),
+        }
+        self.iter_params = iter_params
+        logger.info(f"Adzuna iter params are : {iter_params}")
+
+
+    def _make_requests(self):
+        """
+        Make multiple requests to adzuna by iterating over self.iter_params
+        :return: None
+        """
+        countries = self.iter_params["countries"]
+        cities = self.iter_params["cities"]
+        search_terms = self.iter_params["search_terms"]
+        request_params = self.request_params
+        result = {
+            "area": [],
+            "company": [],
+            "title": [],
+            "redirect_url": []
+        }
+        for country in countries:
+            for city in cities:
+                for term in search_terms:
+                    request_url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/{self.common_config['page_number']}"
+                    if not self.common_config["remote"]:
+                        request_params["where"] = city
+                        request_params["what"] = term
+                        response = requests.get(url=request_url, params=request_params, headers=self._get_adzuna_request_headers())
+                        if response.status_code != 200:
+                            logger.error(f"Status: {response.status_code}")
+                            logger.error(f"Response: {response.text}")
+                            logger.error(f"URL: {response.url}")
+                            logger.error(f"Params: {request_params}")
+                        else:
+                            data = response.json()
+                            output = data["results"]
+                            for dictionary in output:
+                                result["area"].append(dictionary["location"]["area"])
+                                result["company"].append(dictionary["company"]["display_name"])
+                                result["title"].append(dictionary["title"])
+                                result["redirect_url"].append(dictionary["redirect_url"])
+                    else:
+                        logger.error("Remote job search for adzuna is not implemented yet!")
+        self.result = pd.DataFrame(result)
+        logger.info(f"Total received results are {len(self.result)}.")
+
+
+    def _save_csv_file(self):
+        """
+        Save raw CSV file in data/raw folder
+        :return: None
+        """
+        file_path = os.path.join(RAW_FOLDER_PATH,"adzuna_" + self.common_config["output_filename"])
+        self.result.to_csv(file_path, encoding="utf-8", index=False)
+        logger.info(f"Raw output data is stored at location {file_path}")
+
+
+    @staticmethod
+    def _get_adzuna_request_headers():
+        """
+        Gives headers to pass in the API request
+        :return:
+        """
+        headers = {
+            "Accept": "application/json"
+        }
+        return headers
