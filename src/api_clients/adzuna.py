@@ -4,7 +4,6 @@ import pandas as pd
 from box import Box
 from loguru import logger
 from dotenv import load_dotenv
-from src.utils.custom_config import get_country_code_mappings
 from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH
 
 
@@ -68,7 +67,7 @@ class Adzuna():
             request_params["part_time"] = "1"
         self.request_params = request_params
         iter_params = {
-            "countries" : [get_country_code_mappings()[country.strip().lower()] for country in common_config.country],
+            "countries" : [self._get_country_code_mappings()[country] for country in common_config.country],
             "cities": list(common_config.city),
             "search_terms": list(common_config.search_keywords),
         }
@@ -138,3 +137,29 @@ class Adzuna():
             "Accept": "application/json"
         }
         return headers
+
+
+    @staticmethod
+    def _get_country_code_mappings():
+        country_code_mapping = {
+            "united kingdom": "gb",
+            "united states": "us",
+            "austria": "at",
+            "australia": "au",
+            "belgium": "be",
+            "brazil": "br",
+            "canada": "ca",
+            "switzerland": "ch",
+            "germany": "de",
+            "spain": "es",
+            "france": "fr",
+            "india": "in",
+            "italy": "it",
+            "mexico": "mx",
+            "netherlands": "nl",
+            "new zealand": "nz",
+            "poland": "pl",
+            "singapore": "sg",
+            "south africa": "za",
+        }
+        return country_code_mapping
