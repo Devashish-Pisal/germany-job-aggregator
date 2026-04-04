@@ -1,7 +1,21 @@
 from loguru import logger
 from path_config import LOGS_FOLDER_PATH
 from datetime import datetime
-import os
+from src.utils.validate_config import  ValidateConfig
+from config.common_config import config
+
+
+try:
+    cfg = ValidateConfig(**config)
+    print(type(cfg))
+    print(cfg)
+    print(dict(cfg))
+except Exception as e:
+    logger.error("Config validation failed")
+    raise e
+
+exit()
+
 
 
 # Log file setup
