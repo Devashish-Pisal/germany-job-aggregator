@@ -3,16 +3,19 @@ from path_config import LOGS_FOLDER_PATH
 from datetime import datetime
 from src.utils.validate_config import  ValidateConfig
 from config.common_config import config
+from src.api_clients.adzuna import Adzuna
 
-
+cfg = None
 try:
     cfg = ValidateConfig(**config)
-    print(type(cfg))
-    print(cfg)
-    print(dict(cfg))
-except Exception as e:
-    logger.error("Config validation failed")
-    raise e
+    cfg = dict(cfg)
+except Exception:
+    logger.exception("Config validation failed")
+    exit(1)
+
+adzuna = Adzuna(cfg)
+adzuna.execute_query()
+
 
 exit()
 
