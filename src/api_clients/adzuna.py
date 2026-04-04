@@ -4,7 +4,8 @@ import pandas as pd
 from box import Box
 from loguru import logger
 from dotenv import load_dotenv
-from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH
+from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH, DUPLICATES_FOLDER_PATH
+from src.utils.util import generate_deduplication_key
 
 
 class Adzuna():
@@ -15,6 +16,7 @@ class Adzuna():
         self.request_params = None
         self.iter_params = None
         self.result = None
+        self.duplicated_entries = None
         self._load_adzuna_secrets()
 
 
@@ -43,7 +45,7 @@ class Adzuna():
         """
         self._construct_request_and_iter_params()
         self._make_requests()
-        self._save_csv_file()
+        self._save_csv_files()
 
 
     def _construct_request_and_iter_params(self):
@@ -84,12 +86,20 @@ class Adzuna():
         cities = self.iter_params["cities"]
         search_terms = self.iter_params["search_terms"]
         request_params = self.request_params
-        result = {
+        adzuna_result = pd.DataFrame({
             "area": [],
             "company": [],
             "title": [],
-            "redirect_url": []
-        }
+            "redirect_url": [],
+            "deduplication_key": []
+        })
+        duplicated_entries = pd.DataFrame({
+            "area": [],
+            "company": [],
+            "title": [],
+            "redirect_url": [],
+            "deduplication_key": []
+        })
         for country in countries:
             for city in cities:
                 for term in search_terms:
@@ -106,25 +116,55 @@ class Adzuna():
                         else:
                             data = response.json()
                             output = data["results"]
+                            rows = []
                             for dictionary in output:
-                                result["area"].append(dictionary["location"]["area"])
-                                result["company"].append(dictionary["company"]["display_name"])
-                                result["title"].append(dictionary["title"])
-                                result["redirect_url"].append(dictionary["redirect_url"])
+                                title = dictionary["title"].strip().lower()
+                                company = dictionary["company"]["display_name"].strip().lower()
+                                location = dictionary["location"]["area"][-1]
+                                dedup_key = generate_deduplication_key(title, company, location)
+                                rows.append({
+                                    "area": ", ".join([item.strip().lower() for item in dictionary["location"]["area"]]),
+                                    "company": company,
+                                    "title": title,
+                                    "redirect_url": dictionary["redirect_url"],
+                                    "deduplication_key": dedup_key
+                                })
+                            result_1 = pd.DataFrame(rows)
+                            # Deduplicate
+                            df_to_add = result_1[~result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
+                            df_to_add = df_to_add[~df_to_add["deduplication_key"].isin(adzuna_result["deduplication_key"])]
+                            # Capture duplicates before adding to main result
+                            duplicated_entry_1 = result_1[result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
+                            duplicated_entry_2 = result_1[result_1["deduplication_key"].isin(adzuna_result["deduplication_key"])]
+                            current_duplicates = pd.concat([duplicated_entry_1, duplicated_entry_2],ignore_index=True)
+                            # If self.duplicated_entries already exists (non-empty), filter out overlapping duplicates
+                            if not duplicated_entries.empty:
+                                current_duplicates = current_duplicates[~current_duplicates["redirect_url"].isin(duplicated_entries["redirect_url"])]
+                                current_duplicates = current_duplicates[~current_duplicates["deduplication_key"].isin(duplicated_entries["deduplication_key"])]
+                            # Add the filtered duplicates to the class-level accumulator
+                            duplicated_entries = pd.concat([duplicated_entries, current_duplicates],ignore_index=True)
+                            # Add unique entries
+                            adzuna_result = pd.concat([adzuna_result, df_to_add], ignore_index=True)
                     else:
                         logger.error("Remote job search for adzuna is not implemented yet!")
-        self.result = pd.DataFrame(result)
-        logger.info(f"Total received results are {len(self.result)}.")
+        self.result = adzuna_result
+        self.duplicated_entries = duplicated_entries
+        logger.info(f"Total received unique results are {len(self.result)}.")
+        logger.info(f"Total found duplicated entries are {len(self.duplicated_entries)}")
 
 
-    def _save_csv_file(self):
+    def _save_csv_files(self):
         """
-        Save raw CSV file in data/raw folder
+        Saves raw CSV files of adzuna unique job postings in folder data/raw and adzuna duplicated job postings in folder data/duplicated
         :return: None
         """
         file_path = os.path.join(RAW_FOLDER_PATH,"adzuna_" + self.common_config["output_filename"])
         self.result.to_csv(file_path, encoding="utf-8", index=False)
         logger.info(f"Raw output data is stored at location {file_path}")
+
+        duplicates_file_path = os.path.join(DUPLICATES_FOLDER_PATH, "adzuna_duplicates.csv")
+        self.duplicated_entries.to_csv(duplicates_file_path, encoding="utf-8", index=False)
+        logger.info(f"Adzuna duplicate job entries stored at location {duplicates_file_path}")
 
 
     @staticmethod
