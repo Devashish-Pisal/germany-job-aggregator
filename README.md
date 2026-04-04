@@ -6,3 +6,4 @@ It demonstrates practical skills in API integration, data processing, and buildi
 
 ## TODO
 
+> **Project Status:** Work in progress — ongoing development.
