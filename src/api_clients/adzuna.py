@@ -141,6 +141,10 @@ class Adzuna():
 
     @staticmethod
     def _get_country_code_mappings():
+        """
+        Maps country names with their ISO 8601 country codes
+        :return: Mapping of country names with their ISO 8601 country codes
+        """
         country_code_mapping = {
             "united kingdom": "gb",
             "united states": "us",
