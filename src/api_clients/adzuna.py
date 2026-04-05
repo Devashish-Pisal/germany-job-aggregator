@@ -8,7 +8,7 @@ from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH, DUPLICATES_FOLDE
 from src.utils.util import generate_deduplication_key
 
 
-class Adzuna():
+class Adzuna:
     def __init__(self, common_config:dict):
         self.common_config = common_config
         self.ADZUNA_APP_ID = None
@@ -175,7 +175,8 @@ class Adzuna():
         :return:
         """
         headers = {
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0",
         }
         return headers
 
