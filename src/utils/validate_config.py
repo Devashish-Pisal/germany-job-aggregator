@@ -2,11 +2,6 @@ from typing import List, Literal
 from pydantic import BaseModel, Field, field_validator
 
 
-class Deduplication(BaseModel):
-    use_url: bool
-    use_title_company_location: bool
-
-
 class ValidateConfig(BaseModel):
     country:List[str]
     city:List[str]
@@ -22,7 +17,6 @@ class ValidateConfig(BaseModel):
     use_adzuna_api: bool
     use_arbeitsamt_api: bool
     use_arbeitsnow_api: bool
-    deduplication: Deduplication
     output_format: Literal[".csv"]
 
 

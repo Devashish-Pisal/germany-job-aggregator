@@ -23,9 +23,5 @@ config =  {
     "max_pages": 1,
     "page_number": 1,
     "results_per_page": 100,
-    "deduplication": {                          # Strategy to find the duplicated from the results
-        "use_url": True,                        # If two job listings refer to the same reference url then it is duplicated listing
-        "use_title_company_location": True,     # Create a key from "title & company & location" for each job listing and match that with existing job listings
-    },
     "output_format": ".csv"                     # Currently only .csv output file format is supported
 }
