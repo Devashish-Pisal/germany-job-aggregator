@@ -9,8 +9,8 @@ config =  {
     "full_time": False,
     "part_time": False,
     "search_keywords": [                        # Synonymes of search terms (at the end results for all terms will be merged and duplicated will be removed) (case-insensitive)
-        "Werkstudent Informatik",
-        #"Python Entwickler",
+        #"Werkstudent Informatik",
+        "Python Entwickler",
         #"Python Developer"
     ],
     "output_filename": "jobs.csv",             # Currently only .csv output file formate is supported
