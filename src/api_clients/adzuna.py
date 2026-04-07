@@ -1,7 +1,9 @@
 import os
+import re
 import requests
 import pandas as pd
 from box import Box
+from pprint import pprint
 from loguru import logger
 from dotenv import load_dotenv
 from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH, DUPLICATES_FOLDER_PATH
@@ -16,7 +18,6 @@ class Adzuna:
         self.request_params = None
         self.iter_params = None
         self.result = None
-        self.duplicated_entries = None
         self._load_adzuna_secrets()
 
 
@@ -45,7 +46,7 @@ class Adzuna:
         """
         self._construct_request_and_iter_params()
         self._make_requests()
-        self._save_csv_files()
+        self._save_csv_file()
 
 
     def _construct_request_and_iter_params(self):
@@ -86,20 +87,15 @@ class Adzuna:
         cities = self.iter_params["cities"]
         search_terms = self.iter_params["search_terms"]
         request_params = self.request_params
-        adzuna_result = pd.DataFrame({
+        result = {
             "area": [],
             "company": [],
             "title": [],
+            "source": [],
             "redirect_url": [],
+            "description": [],
             "deduplication_key": []
-        })
-        duplicated_entries = pd.DataFrame({
-            "area": [],
-            "company": [],
-            "title": [],
-            "redirect_url": [],
-            "deduplication_key": []
-        })
+        }
         for country in countries:
             for city in cities:
                 for term in search_terms:
@@ -116,56 +112,38 @@ class Adzuna:
                         else:
                             data = response.json()
                             output = data["results"]
-                            rows = []
                             for dictionary in output:
                                 title = dictionary["title"].strip().lower()
                                 company = dictionary["company"]["display_name"].strip().lower()
                                 location = dictionary["location"]["area"][-1]
                                 dedup_key = generate_deduplication_key(title, company, location)
-                                rows.append({
-                                    "area": ", ".join([item.strip().lower() for item in dictionary["location"]["area"]]),
-                                    "company": company,
-                                    "title": title,
-                                    "redirect_url": dictionary["redirect_url"],
-                                    "deduplication_key": dedup_key
-                                })
-                            result_1 = pd.DataFrame(rows)
-                            if not result_1.empty:
-                                # Deduplicate
-                                df_to_add = result_1[~result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
-                                df_to_add = df_to_add[~df_to_add["deduplication_key"].isin(adzuna_result["deduplication_key"])]
-                                # Capture duplicates before adding to main result
-                                duplicated_entry_1 = result_1[result_1["redirect_url"].isin(adzuna_result["redirect_url"])]
-                                duplicated_entry_2 = result_1[result_1["deduplication_key"].isin(adzuna_result["deduplication_key"])]
-                                current_duplicates = pd.concat([duplicated_entry_1, duplicated_entry_2],ignore_index=True)
-                                # If self.duplicated_entries already exists (non-empty), filter out overlapping duplicates
-                                if not duplicated_entries.empty:
-                                    current_duplicates = current_duplicates[~current_duplicates["redirect_url"].isin(duplicated_entries["redirect_url"])]
-                                    current_duplicates = current_duplicates[~current_duplicates["deduplication_key"].isin(duplicated_entries["deduplication_key"])]
-                                # Add the filtered duplicates to the class-level accumulator
-                                duplicated_entries = pd.concat([duplicated_entries, current_duplicates],ignore_index=True)
-                                # Add unique entries
-                                adzuna_result = pd.concat([adzuna_result, df_to_add], ignore_index=True)
+                                result["area"].append(", ".join([item.strip().lower() for item in dictionary["location"]["area"]]))
+                                result["company"].append(company)
+                                result["title"].append(title)
+                                result["source"].append("adzuna")
+                                result["redirect_url"].append(dictionary["redirect_url"])
+                                result["description"].append(self._get_normalized_job_description(dictionary["description"]))
+                                result["deduplication_key"].append(dedup_key)
                     else:
-                        logger.error("Remote job search for adzuna is not implemented yet!")
-        self.result = adzuna_result
-        self.duplicated_entries = duplicated_entries
-        logger.info(f"Total found potential unique results are {len(self.result)}.")
-        logger.info(f"Total found duplicated entries are {len(self.duplicated_entries)}")
+                        raise ValueError("Remote job search for adzuna is not implemented yet!")
+        self.result = pd.DataFrame(result)
 
 
-    def _save_csv_files(self):
+    def _save_csv_file(self):
         """
-        Saves raw CSV files of adzuna unique job postings in folder data/raw and adzuna duplicated job postings in folder data/duplicated
+        Saves raw CSV files of adzuna job postings in folder data/raw.
         :return: None
         """
         file_path = os.path.join(RAW_FOLDER_PATH,"adzuna_" + self.common_config["output_filename"])
         self.result.to_csv(file_path, encoding="utf-8", index=False)
-        logger.info(f"Raw output data is stored at location {file_path}")
+        logger.info(f"Raw output data with {len(self.result)} entries is stored at location {file_path}")
 
-        duplicates_file_path = os.path.join(DUPLICATES_FOLDER_PATH, "adzuna_duplicates.csv")
-        self.duplicated_entries.to_csv(duplicates_file_path, encoding="utf-8", index=False)
-        logger.info(f"Adzuna duplicate job entries stored at location {duplicates_file_path}")
+
+    @staticmethod
+    def _get_normalized_job_description(description:str):
+        normalized = re.sub(r"\s+", " ", description).strip().lower()
+        normalized = normalized[0:490] # Removing last 10 chars (description contains "..." at the end)
+        return normalized
 
 
     @staticmethod
@@ -209,3 +187,39 @@ class Adzuna:
             "south africa": "za",
         }
         return country_code_mapping
+
+
+"""
+EXAMPLE OF ONE OUTPUT RESPONSE DICTIONARY
+
+{'__CLASS__': 'Adzuna::API::Response::Job',
+ 'adref': 'eyJhbGciOiJIUzI1NiJ9.eyJpIjoiNTY5MDUxMTc1MiIsInMiOiJZSnhIS2IweThSR2xNN1libWNubFl3In0.nTFainf-d4HGQIImRmQER5598s8GE5EZySoyW2jDgzc',
+ 'category': {'__CLASS__': 'Adzuna::API::Response::Category',
+              'label': 'IT-Stellen',
+              'tag': 'it-jobs'},
+ 'company': {'__CLASS__': 'Adzuna::API::Response::Company',
+             'display_name': 'Stiftung Kirchliches Rechenzentrum '
+                             'Südwestdeutschland'},
+ 'created': '2026-04-05T10:59:33Z',
+ 'description': 'Deine Mission - Du entwickelst das datengetriebene Herz '
+                'unserer Services Als Python Developer bist Du der Experte für '
+                'die Konzeption, Entwicklung und Optimierung unserer '
+                'datenintensiven Anwendungen. Dein Fokus liegt auf der '
+                'Implementierung performanter Backend-Services und der '
+                'Sicherstellung geschäftskritischer ETL-Prozesse. Aufgaben '
+                'Schwerpunkt Backend-Entwicklung: Du designst, implementierst '
+                'und wartest skalierbare Backend-Services und APIs, primär '
+                'unter Verwendung von Python und FastAPI. ITS…',
+ 'id': '5690511752',
+ 'latitude': 49.09022,
+ 'location': {'__CLASS__': 'Adzuna::API::Response::Location',
+              'area': ['Deutschland',
+                       'Baden-Württemberg',
+                       'Karlsruhe (Kreis)',
+                       'Eggenstein-Leopoldshafen'],
+              'display_name': 'Eggenstein-Leopoldshafen, Karlsruhe (Kreis)'},
+ 'longitude': 8.42763,
+ 'redirect_url': 'https://www.adzuna.de/land/ad/5690511752?se=YJxHKb0y8RGlM7YbmcnlYw&utm_medium=api&utm_source=4aaad539&v=E37BB83202C894B8CC7213F8ED57FA21456AFEBB',
+ 'salary_is_predicted': '0',
+ 'title': 'Python-Entwickler Plattformbetrieb & Datenflussoptimierung (m/w/d)'}
+"""
