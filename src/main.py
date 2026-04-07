@@ -5,6 +5,9 @@ from src.utils.validate_config import  ValidateConfig
 from config.common_config import config
 from src.api_clients.adzuna import Adzuna
 
+# TODO: CREATE DATA FOLDER AND SUBFOLDERS (IF NOT EXISTS)
+
+
 cfg = None
 try:
     cfg = ValidateConfig(**config)
