@@ -54,9 +54,8 @@ class Arbeitsamt:
     def _make_request(self):
         request_url = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
         request_params = self.request_params
-        iter_params = self.iter_params
-        cities = iter_params["cities"]
-        search_terms = iter_params["search_terms"]
+        cities = self.iter_params["cities"]
+        search_terms = self.iter_params["search_terms"]
         result = {
             "area": [],
             "company": [],
@@ -71,7 +70,7 @@ class Arbeitsamt:
                 if not self.common_config["remote"]:
                     request_params["wo"] = city
                     request_params["was"] = term
-                    response = requests.get(url=request_url, headers=self._get_arbeitsamt_request_headers(), params=request_params)
+                    response = requests.get(url=request_url, params=request_params, headers=self._get_arbeitsamt_request_headers())
                     if response.status_code != 200:
                         logger.error(f"Status: {response.status_code}")
                         logger.error(f"Response: {response.text}")
@@ -81,7 +80,7 @@ class Arbeitsamt:
                         output = response.json()
                         output = output.get("stellenangebote", [])
                         for item in output:
-                            job_description = self._get_job_description(item["refnr"])
+                            job_description = self._get_normalized_job_description(item["refnr"])
                             title = item["titel"].strip().lower()
                             company = item["arbeitgeber"].strip().lower()
                             location = item["arbeitsort"]["ort"].strip().lower()
@@ -102,10 +101,10 @@ class Arbeitsamt:
     def _save_csv_file(self):
         file_path = os.path.join(RAW_FOLDER_PATH, "arbeitsamt_" + self.common_config["output_filename"])
         self.result.to_csv(file_path, encoding="utf-8", index=False)
-        logger.info(f"Raw output data is stored at location {file_path}")
+        logger.info(f"Raw output data with {len(self.result)} entries is stored at location {file_path}")
 
 
-    def _get_job_description(self, ref_id):
+    def _get_normalized_job_description(self, ref_id):
         base64_bytes = base64.b64encode(ref_id.encode("utf-8"))
         base64_string = base64_bytes.decode("utf-8")
         description_url = f"https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobdetails/{base64_string}"
@@ -118,6 +117,7 @@ class Arbeitsamt:
         else:
             raw = response.json()["stellenangebotsBeschreibung"]
             description = re.sub(r"\s+", " ", raw).strip().lower()
+            description = description[0:490] # Truncating to 490 chars because adzuna doesn't provide complete description. If not truncated to 490 chars fuzzy matching will not work as intended.
             return description
 
 
