@@ -9,9 +9,9 @@ config =  {
     "full_time": False,
     "part_time": False,
     "search_keywords": [                        # Synonymes of search terms (at the end results for all terms will be merged and duplicated will be removed) (case-insensitive)
-        "Python Engineer",
-        "Python Entwickler",
-        "Python Developer"
+        "Werkstudent Informatik",
+        #"Python Entwickler",
+        #"Python Developer"
     ],
     "output_filename": "jobs.csv",             # Currently only .csv output file formate is supported
 
@@ -22,6 +22,6 @@ config =  {
     "use_arbeitsnow_api": False,
     "max_pages": 1,
     "page_number": 1,
-    "results_per_page": 100,
+    "results_per_page": 250,
     "output_format": ".csv"                     # Currently only .csv output file format is supported
 }
