@@ -5,3 +5,5 @@ python-dotenv
 python-box
 requests
 pydantic
+bs4
+clean-text
