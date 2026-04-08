@@ -17,6 +17,7 @@ class ValidateConfig(BaseModel):
     use_adzuna_api: bool
     use_arbeitsamt_api: bool
     use_arbeitsnow_api: bool
+    use_findwork_api: bool
     output_format: Literal[".csv"]
 
 
