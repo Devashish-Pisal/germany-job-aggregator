@@ -5,6 +5,7 @@ import pandas as pd
 from box import Box
 from pprint import pprint
 from loguru import logger
+from time import sleep
 from dotenv import load_dotenv
 from path_config import RAW_FOLDER_PATH, PROCESSED_FOLDER_PATH, DUPLICATES_FOLDER_PATH
 from src.utils.util import generate_deduplication_key
@@ -97,6 +98,8 @@ class FindWork:
                 if not self.common_config["remote"]:
                     request_params["location"] = city
                     request_params["search"] = term
+                    sleep(5)
+                    logger.info("Sleeping for 5 seconds to avoid api request throttle.")
                     response = requests.get(url=request_url, params=request_params, headers=self._get_findwork_request_headers())
                     if response.status_code != 200:
                         logger.error(f"Status: {response.status_code}")
