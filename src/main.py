@@ -1,6 +1,9 @@
 from loguru import logger
 from path_config import LOGS_FOLDER_PATH
 from datetime import datetime
+
+from src.api_clients.arbeitsamt import Arbeitsamt
+from src.api_clients.findwork import FindWork
 from src.utils.validate_config import  ValidateConfig
 from config.common_config import config
 from src.api_clients.adzuna import Adzuna
@@ -19,8 +22,13 @@ except Exception:
 adzuna = Adzuna(cfg)
 adzuna.execute_query()
 
-
 exit()
+
+arbeitsamt = Arbeitsamt(cfg)
+arbeitsamt.execute_query()
+findwork = FindWork(cfg)
+findwork.execute_query()
+
 
 
 
