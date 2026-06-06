@@ -9,6 +9,8 @@ config =  {
     "full_time": False,
     "part_time": False,
     "search_keywords": [                        # Synonymes of search terms (at the end results for all terms will be merged and duplicated will be removed) (case-insensitive)
+        "Werkstudent KI",
+        """
         "Software Developer Working Student",
         "Software Development Intern",
         "Junior Software Engineer Part-Time",
@@ -22,6 +24,7 @@ config =  {
         "Werkstudent Backend Entwicklung",
         "Praktikum Java Entwicklung",
         "Werkstudent Python Entwicklung",
+        """
     ],
     "output_filename": "jobs.csv",             # Currently only .csv output file formate is supported
 
