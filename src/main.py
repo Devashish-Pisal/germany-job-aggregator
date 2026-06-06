@@ -22,7 +22,7 @@ except Exception:
 adzuna = Adzuna(cfg)
 adzuna.execute_query()
 
-exit()
+
 
 arbeitsamt = Arbeitsamt(cfg)
 arbeitsamt.execute_query()
@@ -30,7 +30,7 @@ findwork = FindWork(cfg)
 findwork.execute_query()
 
 
-
+exit()
 
 # Log file setup
 log_file_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_job-aggregator-run.log"
