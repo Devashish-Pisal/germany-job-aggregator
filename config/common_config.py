@@ -32,7 +32,7 @@ config =  {
     # Developer setting
     "use_adzuna_api": True,
     "use_arbeitsamt_api": True,
-    "use_arbeitsnow_api": True,
+    "use_arbeitnow_api": True,
     "use_findwork_api": True,                   # Developer focussed platform
     "max_pages": 1,
     "page_number": 1,
