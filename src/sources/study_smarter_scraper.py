@@ -37,8 +37,9 @@ def extract_job_urls(query_url_list:list[str]) -> set[str]:
             print(cards.count())
             for i in range(cards.count()):
                 card = cards.nth(i)
-                link = card.locator("a").get_attribute("href")
-                job_urls.add(link)
+                href = card.locator("a").get_attribute("href")
+                if href:
+                    job_urls.add(href)
         browser.close()
     return job_urls
 
