@@ -2,7 +2,7 @@
 config =  {
 
     # User query setting
-    "country": ["germany"],                     # List of countries to search for job listings (case-insensitive)
+    "country": ["germany"],                     # List of countries to search for job listings (case-insensitive) [CURRENTLY ONLY SUPPORTED FOR 'GERMANY']
     "city": ["mannheim"],                       # List of cities to search for job listings (case-insensitive)
     "distance": 40,                             # In kilometers
     "remote": False,                            # If set "True", then "city", "distance" fields will be ignored completely.
@@ -26,7 +26,10 @@ config =  {
         "Werkstudent Python Entwicklung",
         """
     ],
-    "output_filename": "jobs.csv",             # Currently only .csv output file formate is supported
+    "output_filename": "jobs.csv",              # Currently only .csv output file formate is supported
+    "keywords_job_title_must_include": [],      # Job title will always include at least one keyword from the list (OR operation)
+    "keywords_job_title_must_not_include": [],  # Job title will never include any keyword from the list (AND operation)
+    
 
 
     # Developer setting
