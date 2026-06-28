@@ -44,6 +44,8 @@ def extract_job_urls(query_url_list:list[str]) -> set[str]:
                 href = card.locator("a").get_attribute("href")
                 if href:
                     job_urls.add("https://www.xing.com"+ href)
+            page.close()
+            page = browser.new_page()
         browser.close()
     return job_urls
 
