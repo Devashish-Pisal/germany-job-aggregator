@@ -1,4 +1,5 @@
 indeed_scraper_config = {
+    "use_headless_mode": False,
     "BASE_URL": "https://de.indeed.com/jobs?q={keywords}&l={location}&fromage={job_age}&radius={radius}",
     "location_radius_pairs": {
         # Allowed radius lengths for indeed are : 0, 5, 10, 15, 25, 35, 40, 50, 100
