@@ -28,7 +28,7 @@ def extract_job_urls(query_url_list:list[str]) -> set[str]:
     job_urls = set()
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False, # Headless scraping is not allowed on xing
+            headless=xing_scraper_config["use_headless_mode"], # Headless scraping is not allowed on xing
         )
         page = browser.new_page()
         for url in query_url_list:
