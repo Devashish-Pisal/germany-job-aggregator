@@ -41,6 +41,8 @@ def extract_job_urls(query_url_list:list[str]) -> set[str]:
                 href = links.nth(i).get_attribute("href")
                 if href:
                     job_urls.add("https://www.stepstone.de/"+ href)
+            page.close()
+            page = browser.new_page()
         browser.close()
     return job_urls
 
