@@ -6,7 +6,7 @@ indeed_scraper_config = {
         "Mannheim, Baden-Württemberg": 25,
         # "Frankfurt am Main": 20,
     },
-    "job_age": 1,  # Allowed number of days old job for indeed is (1, 3, 7, 14)
+    "job_age": 7,  # Allowed number of days old job for indeed is (1, 3, 7, 14)
     "search_keywords": [
         "Werkstudent KI",
         "Werkstudent Automatisierung",

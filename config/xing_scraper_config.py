@@ -6,7 +6,7 @@ xing_scraper_config = {
         "Mannheim": 0,
         # "Frankfurt am Main": 20,
     },
-    "job_age": "LAST_24_HOURS", # Allowed number of days old job for xing is : LAST_24_HOURS, LAST_WEEK, LAST_MONTH
+    "job_age": "LAST_WEEK", # Allowed number of days old job for xing is : LAST_24_HOURS, LAST_WEEK, LAST_MONTH
     "search_keywords": [
         # Werkstudent KI,
         # "Werkstudent Automatisierung",
