@@ -10,7 +10,7 @@ from src.sources.adzuna import Adzuna
 
 # TODO: CREATE DATA FOLDER AND SUBFOLDERS (IF NOT EXISTS)
 
-
+'''
 cfg = None
 try:
     cfg = ValidateConfig(**config)
@@ -28,12 +28,12 @@ arbeitsamt = Arbeitsamt(cfg)
 arbeitsamt.execute_query()
 findwork = FindWork(cfg)
 findwork.execute_query()
-
-
 exit()
+
 
 # Log file setup
 log_file_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_job-aggregator-run.log"
 log_file_path = str(LOGS_FOLDER_PATH / log_file_name)
 logger.add(log_file_path, rotation="10 MB", level="INFO")
+'''
 
