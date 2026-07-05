@@ -1,7 +1,9 @@
 import time
 from pprint import pprint
+from loguru import logger
 from playwright.sync_api import sync_playwright
 from config.xing_scraper_config import xing_scraper_config
+from config.scraper_common_config import scraper_common_config
 
 
 class XingScraper:
@@ -16,18 +18,17 @@ class XingScraper:
     def run_scraper(self):
         # TODO: Surround following block with if to disable scraper
         self.query_urls = self.build_query_urls()
-        print(len(self.query_urls))
-        print(self.query_urls)
+        logger.info(f"[Xing Scraper] Xing scraper built {len(self.query_urls)} query combinations")
         self.all_query_matched_job_urls = self.extract_job_urls(self.query_urls)
-        print(len(self.all_query_matched_job_urls))
-        print(self.all_query_matched_job_urls)
+        logger.info(f"[Xing Scraper] Xing found total {len(self.all_query_matched_job_urls)} query matching job urls")
+
 
 
     @staticmethod
     def build_query_urls() -> list[str]:
         urls = []
         location_radius_pairs = xing_scraper_config["location_radius_pairs"]
-        keywords_list = xing_scraper_config["search_keywords"]
+        keywords_list = scraper_common_config["search_keywords"]
         job_age = xing_scraper_config["job_age"]
         base_url = xing_scraper_config["BASE_URL"]
         for k,v in location_radius_pairs.items():
@@ -52,22 +53,26 @@ class XingScraper:
                 headless=xing_scraper_config["use_headless_mode"], # Headless scraping is not allowed on xing
             )
             page = browser.new_page()
-            for url in query_url_list:
-                print(url)
-                page.goto(url)
-                accept = page.locator("button[data-action-type='accept'][id='accept']")
-                accept.click() # accept cookies
-                page.wait_for_selector("div[class*='container__Container']")
-                cards = page.locator("div[class*='container__Container'] > div > ol[class*='results-styles'] > li > article[data-xds='Card']")
-                print(cards.count())
-                for i in range(cards.count()):
-                    card = cards.nth(i)
-                    href = card.locator("a").get_attribute("href")
-                    if href:
-                        job_urls.add("https://www.xing.com"+ href)
-                page.close()
-                page = browser.new_page()
-            browser.close()
+            try:
+                for url in query_url_list:
+                    page.goto(url)
+                    is_accept_button_visible = page.locator("button[data-action-type='accept'][id='accept']").is_visible()
+                    if is_accept_button_visible:
+                        accept = page.locator("button[data-action-type='accept'][id='accept']")
+                        accept.click() # accept cookies
+                    page.wait_for_selector("div[class*='container__Container']")
+                    cards = page.locator("div[class*='container__Container'] > div > ol[class*='results-styles'] > li > article[data-xds='Card']")
+                    if cards.count() == 0:
+                        logger.info(f"[Xing Scraper] No matching job posting results found for query {url}")
+                        continue
+                    for i in range(cards.count()):
+                        card = cards.nth(i)
+                        href = card.locator("a").get_attribute("href")
+                        if href:
+                            job_urls.add("https://www.xing.com"+ href)
+                browser.close()
+            except Exception as e:
+                logger.warning(f"[Xing Scrapper] Caught exception {e} for {url}")
         return job_urls
 
 
