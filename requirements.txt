@@ -7,3 +7,4 @@ requests
 pydantic
 bs4
 clean-text
+sentence_transformers
