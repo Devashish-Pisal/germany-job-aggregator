@@ -74,3 +74,14 @@ def compute_embedding(model, job_title:str):
 def compute_cosine_similarity(query_emb, job_embs):
     # cosine similarity = dot product (because normalized)
     return job_embs @ query_emb
+
+
+
+def get_emb_match_job_dict(title, url, title_keyword_emd_match_score, job_posting_platform):
+    output = {
+        "title": title,
+        "url": url,
+        "title_keyword_emd_match_score": title_keyword_emd_match_score,
+        "job_posting_platform": job_posting_platform,
+    }
+    return output
