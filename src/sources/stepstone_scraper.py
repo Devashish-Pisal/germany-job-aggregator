@@ -1,14 +1,21 @@
+import sys
+import time
 from pprint import pprint
 from loguru import logger
 from playwright.sync_api import sync_playwright
 from config.stepstone_scraper_config import stepstone_scraper_config
 from config.scraper_common_config import scraper_common_config
+from src.utils.util import compute_embedding, get_emb_match_job_dict, compute_cosine_similarity
 
 
 
 class StepstoneScraper:
-    def __init__(self):
+    def __init__(self, embedding_model, keywords_embeddings):
+        self.embedding_model = embedding_model
+        self.keywords_embeddings = keywords_embeddings
         self.query_urls = None
+        self.query_matched_emb_accepted_jobs = None
+        self.query_matched_emb_rejected_jobs = None
         self.all_query_matched_job_urls = None
         self.all_query_matched_jobs = None # scrape job descriptions and construct list of JOB objects
         self.matching_jobs = None # Resume matching jobs in embedding space --> save these jobs into db immediately
@@ -19,9 +26,11 @@ class StepstoneScraper:
         # TODO: Surround following block with if to disable scraper
         self.query_urls = self.build_query_urls()
         logger.info(f"[Stepstone Scraper] Stepstone scraper built {len(self.query_urls)} query combinations")
-        self.all_query_matched_job_urls = self.extract_job_urls(self.query_urls)
-        logger.info(f"[Stepstone Scraper] Stepstone found total {len(self.all_query_matched_job_urls)} query matching job urls")
-
+        self.query_matched_emb_accepted_jobs, self.query_matched_emb_rejected_jobs = self.extract_job_urls(self.query_urls)
+        logger.info(f"[Stepstone Scraper] Stepstone found total {len(self.query_matched_emb_accepted_jobs)} query matching accepted job urls and {len(self.query_matched_emb_rejected_jobs)} query matching rejected urls.")
+        pprint(self.query_matched_emb_accepted_jobs)
+        print(130*"=")
+        pprint(self.query_matched_emb_rejected_jobs)
 
 
     @staticmethod
@@ -45,9 +54,13 @@ class StepstoneScraper:
         return urls
 
 
-    @staticmethod
-    def extract_job_urls(query_url_list:list[str]) -> set[str]:
-        job_urls = set()
+
+    def extract_job_urls(self, query_url_list:list[str]) -> tuple[list[dict], list[dict]]:
+        accepted_job_urls = set()
+        rejected_job_urls = set()
+        accepted_jobs = []
+        rejected_jobs = []
+
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=stepstone_scraper_config["use_headless_mode"], # Headless scraping is not allowed on stepstone
@@ -66,14 +79,31 @@ class StepstoneScraper:
                     links = page.locator("a[href*='/stellenangebote']")
                     for i in range(number_of_valid_hits_displayed):
                         href = links.nth(i).get_attribute("href")
-                        if href:
-                            job_urls.add("https://www.stepstone.de/"+ href)
+                        title = links.nth(i).locator("div").nth(2).inner_text()
+                        threshold = scraper_common_config["embedding_match_config"]["threshold"]
+                        if href and title:
+                            href = "https://www.stepstone.de/"+ href
+                            job_title_emb = compute_embedding(self.embedding_model, title)
+                            max_sim = -sys.float_info.max
+                            for query_emb in self.keywords_embeddings:
+                                current_sim = compute_cosine_similarity(query_emb, job_title_emb)
+                                if current_sim > max_sim:
+                                    max_sim = current_sim
+                            job = get_emb_match_job_dict(title, href, round(max_sim, 4), "stepstone")
+                            if max_sim >= threshold and href not in accepted_job_urls:
+                                accepted_job_urls.add(href)
+                                accepted_jobs.append(job)
+                            elif href not in rejected_job_urls:
+                                rejected_job_urls.add(href)
+                                rejected_jobs.append(job)
+                                logger.warning(f"Rejecting {title} because max similarity score is {max_sim} | URL {href} | Threshold {scraper_common_config["embedding_match_config"]["threshold"]}")
                 browser.close()
             except Exception as e:
                 logger.warning(f"[Stepstone Scrapper] Caught exception {e} for url {url}")
-        return job_urls
+        return accepted_jobs, rejected_jobs
 
 
 if __name__=="__main__":
-    stepstone_scraper = StepstoneScraper()
-    stepstone_scraper.run_scraper()
+    pass
+    # stepstone_scraper = StepstoneScraper()
+    # stepstone_scraper.run_scraper()
