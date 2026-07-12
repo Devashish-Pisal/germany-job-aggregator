@@ -4,7 +4,7 @@ stepstone_scraper_config = {
     "location_radius_pairs" : {
         # Allowed radius lengths for stepstone are : 5, 10, 20, 30, 40, 50, 75, 100
         "Mannheim": 20,
-        #"Heidelberg": 20,
+        # "Heidelberg": 20,
         #"Ludwigshafen Am Rhein": 20,
         #"Walldorf": 20,
         #"Karlsruhe": 20,
