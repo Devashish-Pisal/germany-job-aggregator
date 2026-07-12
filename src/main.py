@@ -54,36 +54,38 @@ start = time.time()
 embedding_model = SentenceTransformer(scraper_common_config["embedding_match_config"]["sentence_embedding_model"])
 logger.info("Model loaded!")
 kw_embeddings = compute_search_keywords_embeddings(embedding_model, scraper_common_config["search_keywords"])
-logger.info(f"Keyword embeddings computed | First 5 are : {kw_embeddings[0:5]}")
+
 # indeed_result = []
 # xing_result = []
-# stepstone_result = []
-study_smarter_result = []
+stepstone_result = []
+# study_smarter_result = []
 
 # indeed_scraper = IndeedScraper()
 # xing_scraper = XingScraper()
-# stepstone_scraper = StepstoneScraper()
-ss_scraper = StudySmarterScraper(embedding_model=embedding_model, keyword_embeddings=kw_embeddings)
+stepstone_scraper = StepstoneScraper(embedding_model, kw_embeddings)
+# ss_scraper = StudySmarterScraper(embedding_model=embedding_model, keyword_embeddings=kw_embeddings)
 
 # indeed_scraper.run_scraper()
 # xing_scraper.run_scraper()
-# stepstone_scraper.run_scraper()
-ss_scraper.run_scraper()
+stepstone_scraper.run_scraper()
+# ss_scraper.run_scraper()
 
 # indeed_result.extend(indeed_scraper.all_query_matched_job_urls)
 # xing_result.extend(xing_scraper.all_query_matched_job_urls)
-# stepstone_result.extend(stepstone_scraper.all_query_matched_job_urls)
-study_smarter_result.extend(ss_scraper.query_matched_emb_accepted_urls)
+stepstone_result.extend(stepstone_scraper.all_query_matched_job_urls)
+# study_smarter_result.extend(ss_scraper.query_matched_emb_accepted_jobs)
 
 end = time.time()
 
 
 print("="*130)
-print(f"FINAL AGGREGATED RESULT - {len(study_smarter_result)} items")
-for item in study_smarter_result:
-    print(item)
+print(f"FINAL AGGREGATED RESULT - {len(stepstone_result)} items")
+for item in stepstone_result:
+    pprint(item)
 print("="*130)
 print(f"Scraping took {((end-start)/60):.2f} minutes")
 print("="*130)
-print("Rejected Items")
-pprint(ss_scraper.query_matched_emb_rejected_urls)
+
+print(f"REJECTED ITEMS - {len(stepstone_scraper.query_matched_emb_rejected_jobs)} items")
+pprint(stepstone_scraper.query_matched_emb_rejected_jobs)
+print("="*130)
