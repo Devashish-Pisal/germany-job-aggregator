@@ -5,7 +5,7 @@ sss_config = {
         # Allowed radius lengths for study smarter are : 1, 10, 20, 30, 40, 50
         "Mannheim": 30,
         "Heidelberg": 30,
-        "Ludwigshafen": 30,
+        # "Ludwigshafen": 30,
         #"Walldorf": 20,
         #"Karlsruhe": 20,
         #"Kaiserslautern": 20,
@@ -13,5 +13,5 @@ sss_config = {
         #"Frankfurt am Main": 20,
         #"Stuttgart": 20,
     },
-    "job_age": 1, # Allowed number of days old job for study smarter is (1, 7, 30)
+    "job_age": 7, # Allowed number of days old job for study smarter is (1, 7, 30)
 }
